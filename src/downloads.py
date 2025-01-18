@@ -45,9 +45,9 @@ class BaseDownload():
 
             print(f'Login with susscess in {self.system} page')
         except WebDriverException:
-            self.handle_error(f'Element not found {self.system} page')
+            Telegram(f'Element not found {self.system} page')
         except Exception:
-            self.handle_error(f'General error in {self.system} page')
+            Telegram(f'General error in {self.system} page')
 
     def navigate(self):
         try:
@@ -74,15 +74,15 @@ class BaseDownload():
                     action.move_to_element(hover_element).perform()
 
                 else:
-                    raise self.handle_error(f'key not valid for actions dict of {self.system}')
+                    raise Telegram(f'key not valid for actions dict of {self.system}')
                 
                 time.sleep(self.timeout)
             
             print(f'Navigate with susscess in {self.system} page')
         except WebDriverException:
-            self.handle_error(f'Element not found {self.system} page')
+            Telegram(f'Element not found {self.system} page')
         except Exception:
-            self.handle_error(f'General error in {self.system} page')
+            Telegram(f'General error in {self.system} page')
         
     def hendle_error(self, message: str):
         Telegram().send_message(message)

@@ -19,12 +19,12 @@ class Telegram:
             'message': self.message,
         }
 
-        with open('phoen_numbers.json', 'r') as file:
-            phone_numbers = json.load(file)['phone_numbers']
+        with open('.\\json\\tel_usrers.json', 'r') as file:
+            tel_users = json.load(file)['phone_numbers']
 
-        for number in phone_numbers:
+        for users in tel_users:
             payload.update({
-                'phone_number': number,
+                'phone_number': users,
             })
 
             response = requests.post(URL, json=payload)
