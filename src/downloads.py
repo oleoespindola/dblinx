@@ -73,6 +73,10 @@ class BaseDownload():
                     action = ActionChains(self.browser)
                     action.move_to_element(hover_element).perform()
 
+                elif 'scroll' in action:
+                    element = self.browser.find_element(By.XPATH, action['scroll'])
+                    self.browser.execute_script("arguments[0].click();", element)
+
                 else:
                     raise Telegram(f'key not valid for actions dict of {self.system}')
                 
@@ -231,9 +235,7 @@ class InsuranceDownload(BaseDownload):
                 {'element': '//*[@id="listar1"]'},
                 {'element': '//*[@id="listar10"]'},
                 {'element': '/html/body/form/input[20]'},
-                {'element': '/html/body/div[4]/div[1]/select'},
-                {'element': '/html/body/div[4]/div[1]/select/option[4]'},
-                {'element': '//*[@id="botaoExportarXLS"]'},
+                {'scroll': '//*[@id="botaoExportarXLS"]'},
             ]
         super().__init__(timeout, download_time, url, login_selector, actions, user, password, system)
         self.download()
