@@ -19,7 +19,7 @@ class Telegram:
             'message': self.message,
         }
 
-        with open('.\\json\\tel_usrers.json', 'r') as file:
+        with open('./json/tel_users.json', 'r') as file:
             tel_users = json.load(file)['phone_numbers']
 
         for users in tel_users:
