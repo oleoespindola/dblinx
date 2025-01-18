@@ -168,7 +168,4 @@ cython_debug/
 #.idea/
 
 # PyPI configuration file
-.pypirc
-
-
 json/chat_IDs.json

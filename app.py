@@ -5,13 +5,13 @@ def run():
     timeout = 6
     download_time = 20
 
-    # EmployeeDownload(timeout, download_time)
+    EmployeeDownload(timeout, download_time)
     # EmployeesUpsert()
     
-    # SalesDownload(timeout, download_time)
+    SalesDownload(timeout, download_time)
     # SalesUpsert()
 
-    # MobilePlansDownload(timeout, download_time)
+    MobilePlansDownload(timeout, download_time)
     # MobilePlansUpsert()
 
     InsuranceDownload(timeout, download_time)
