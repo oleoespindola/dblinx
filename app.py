@@ -2,16 +2,16 @@ from src.downloads import EmployeeDownload, SalesDownload, MobilePlansDownload, 
 from src.upsert import EmployeesUpsert, SalesUpsert, MobilePlansUpsert, InsuranceUpsert
 
 def run():
-    timeout = 10
+    timeout = 6
     download_time = 20
 
-    EmployeeDownload(timeout, download_time)
+    # EmployeeDownload(timeout, download_time)
     # EmployeesUpsert()
     
-    SalesDownload(timeout, download_time)
+    # SalesDownload(timeout, download_time)
     # SalesUpsert()
 
-    MobilePlansDownload(timeout, download_time)
+    # MobilePlansDownload(timeout, download_time)
     # MobilePlansUpsert()
 
     InsuranceDownload(timeout, download_time)

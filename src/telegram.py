@@ -9,6 +9,7 @@ BOT_TOKEN = os.getenv('telegram_token')
 
 class Telegram:
     def __init__(self, message: str):
+        print(f'try send message error: {message}')
         self.message = message
         self.send()
 
@@ -16,15 +17,15 @@ class Telegram:
         URL = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
 
         payload = {
-            'message': self.message,
+            'text': self.message,
         }
 
-        with open('./json/tel_users.json', 'r') as file:
-            tel_users = json.load(file)['phone_numbers']
+        with open('./json/chat_IDs.json', 'r') as file:
+            chat_IDs = json.load(file)['chat_IDs']
 
-        for users in tel_users:
+        for chat_ID in chat_IDs:
             payload.update({
-                'phone_number': users,
+                'chat_id': chat_ID,
             })
 
             response = requests.post(URL, json=payload)

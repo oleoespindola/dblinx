@@ -8,7 +8,7 @@ The repository is organized into the following directories:
 
 - src: Contains the source code for the scripts and tools.
 - sql: Contains the SQL scripts for creating the database tables.
-- json: Contains the JSON files used for configuration and data storage.
+- json: Contains the JSON files used for rename table columns and list telegram users IDs for send error messages.
 
 ## Scripts
 **Employee**
