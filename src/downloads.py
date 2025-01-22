@@ -4,6 +4,7 @@ import os
 
 from datetime import date, timedelta
 from selenium import webdriver
+from selenium.webdriver.firefox.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.common.exceptions import WebDriverException
@@ -31,7 +32,9 @@ class BaseDownload():
 
         self.actions = actions
         self.system = system
-        self.browser = webdriver.Firefox()
+        self.browser = Options()
+        self.browser.headless = True
+        self.browser = webdriver.Firefox(options=options)
 
     def login(self):
         try:
