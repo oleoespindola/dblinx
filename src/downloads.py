@@ -36,9 +36,8 @@ class BaseDownload():
         self.system = system
         
         options = Options()
-        # options.add_argument("--headless")  # Run in headless mode (without opening the browser)
-        # options.add_argument("--disable-gpu")  # Disable GPU usageoptions.add_argument("--disable-blink-features=AutomationControlled")
-        # options.add_argument("--disable-blink-features=AutomationControlled")
+        options.add_argument("--headless")  # Run in headless mode (without opening the browser)
+        options.add_argument("--disable-gpu")  # Disable GPU
         service = Service()
         self.browser = webdriver.Firefox(options=options, service=service)
 
@@ -47,7 +46,7 @@ class BaseDownload():
             print(f'\n⏳ Please wait to login in {self.system} page')
             # Access the login page
             self.browser.get(self.url)
-            
+            time.sleep(self.timeout)
             self.browser.find_element(By.XPATH, self.login_selector['user']).send_keys(self.user)
             self.browser.find_element(By.XPATH, self.login_selector['password']).send_keys(self.password)
 

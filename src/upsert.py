@@ -13,7 +13,7 @@ from sqlalchemy.orm import sessionmaker
 
 from .telegram import Telegram
 
-class JSONHandler:
+class Connection:
     def __init__(self):
         self.HOST = os.getenv('db_host')
         self.PORT = os.getenv('db_port')
@@ -26,6 +26,7 @@ class JSONHandler:
             f'{self.PASSWORD}@{self.HOST}:{self.PORT}'
         )
 
+class JSONHandler:
     def get_columns(self) -> dict:
         return self._load_json('./json/columns.json')
 
@@ -75,6 +76,7 @@ class FILEHandler:
 class EmployeesUpsert(JSONHandler, FILEHandler):
     def __init__(self):
         print('Upsert: employees')
+        Connection.__init__(self)
         JSONHandler.__init__(self)
         FILEHandler.__init__(self)
         self.df = self.read()
@@ -133,6 +135,7 @@ class EmployeesUpsert(JSONHandler, FILEHandler):
 class SalesUpsert(JSONHandler, FILEHandler):
     def __init__(self):
         print(f'Upsert: sales')
+        Connection.__init__(self)
         JSONHandler.__init__(self)
         FILEHandler.__init__(self)
         self.df_sales = self.read()
@@ -209,6 +212,7 @@ class SalesUpsert(JSONHandler, FILEHandler):
 class MobilePlansUpsert(JSONHandler, FILEHandler):
     def __init__(self):
         print(f'Upsert: mobile plans')
+        Connection.__init__(self)
         JSONHandler.__init__(self)
         FILEHandler.__init__(self)
         self.df = self.read(filename='sales')
@@ -260,6 +264,7 @@ class MobilePlansUpsert(JSONHandler, FILEHandler):
 class InsuranceUpsert(JSONHandler, FILEHandler):
     def __init__(self):
         print(f'Upsert: insurance')
+        Connection.__init__(self)
         JSONHandler.__init__(self)
         FILEHandler.__init__(self)
         self.df = self.read(filename='Servico')[0]
