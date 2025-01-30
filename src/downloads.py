@@ -3,8 +3,10 @@ import time
 import os
 
 from datetime import date, timedelta
+
 from selenium import webdriver
-from selenium.webdriver.firefox.options import Options
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.common.exceptions import WebDriverException
@@ -32,28 +34,34 @@ class BaseDownload():
 
         self.actions = actions
         self.system = system
-        self.browser = Options()
-        self.browser.headless = True
-        self.browser = webdriver.Firefox(options=options)
+        
+        options = Options()
+        # options.add_argument("--headless")  # Run in headless mode (without opening the browser)
+        # options.add_argument("--disable-gpu")  # Disable GPU usageoptions.add_argument("--disable-blink-features=AutomationControlled")
+        # options.add_argument("--disable-blink-features=AutomationControlled")
+        service = Service()
+        self.browser = webdriver.Firefox(options=options, service=service)
 
     def login(self):
         try:
+            print(f'\n⏳ Please wait to login in {self.system} page')
             # Access the login page
             self.browser.get(self.url)
-
+            
             self.browser.find_element(By.XPATH, self.login_selector['user']).send_keys(self.user)
             self.browser.find_element(By.XPATH, self.login_selector['password']).send_keys(self.password)
 
             self.browser.find_element(By.XPATH, self.login_selector['submit']).click()
 
-            print(f'Login with susscess in {self.system} page')
+            print(f'✅ Login with susscess in {self.system} page\n')
         except WebDriverException:
-            Telegram(f'Element not found {self.system} page')
+            Telegram(f'\n❓ Element not found {self.system} page. Login without success')
         except Exception:
-            Telegram(f'General error in {self.system} page')
+            Telegram(f'\n❓ General error in {self.system} page. Login without success')
 
     def navigate(self):
         try:
+            print(f'\n⏳ Please with to navigate in {self.system} page')
             time.sleep(self.timeout)
 
             for action in self.actions:
@@ -66,7 +74,7 @@ class BaseDownload():
                     self.browser.switch_to.frame(iframe)
 
                 elif 'input_date' in action:
-                    fist_date = date.today() - timedelta(days=30)
+                    fist_date = date.today() - timedelta(days=15)
                     element = self.browser.find_element(By.XPATH, action['input_date'])
                     element.clear()
                     element.send_keys(fist_date.strftime(f'%d-%m-%Y'))
@@ -85,21 +93,23 @@ class BaseDownload():
                 
                 time.sleep(self.timeout)
             
-            print(f'Navigate with susscess in {self.system} page')
+            print(f'✅ Navigate with susscess in {self.system} page')
         except WebDriverException:
-            Telegram(f'Element not found {self.system} page')
+            Telegram(f'\n❓ Element not found {self.system} page. Navigation without success. 🤖')
         except Exception:
-            Telegram(f'General error in {self.system} page')
+            Telegram(f'\n❓ General error in {self.system} page. Navigation without success. 🤖')
         
     def hendle_error(self, message: str):
         Telegram().send_message(message)
 
     def close_browser(self):
+        time.sleep(self.timeout)
         self.browser.quit()
-        print(f'Browser closed with susscess')
+        print(f'✅ Browser closed with susscess')
 
 class EmployeeDownload(BaseDownload):
     def __init__(self, timeout: int, download_time: int):
+        print(f'\n=============== EMPLOYEES ===============')
         url = LINX_URL
         system = 'linx'
         login_selector = {
@@ -140,6 +150,7 @@ class EmployeeDownload(BaseDownload):
 
 class SalesDownload(BaseDownload):
     def __init__(self, timeout: int, download_time: int):
+        print(f'\n============== SALES ==============')
         url = LINX_URL
         system = 'linx'
         login_selector = {
@@ -182,6 +193,7 @@ class SalesDownload(BaseDownload):
 
 class MobilePlansDownload(BaseDownload):
     def __init__(self, timeout: int, download_time: int):
+        print(f'\n============== MOBILE PLANS ==============')
         url = 'https://sav.wooza.com.br/motorola/auth/login'
         system = 'linx'
         login_selector = {
@@ -216,6 +228,7 @@ class MobilePlansDownload(BaseDownload):
 
 class InsuranceDownload(BaseDownload):
     def __init__(self, timeout: int, download_time: int):
+        print(f'\n============== INSURANCE ==============')
         url = LINX_URL
         system = 'linx'
         login_selector = {

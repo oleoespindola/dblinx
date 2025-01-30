@@ -6,6 +6,7 @@ import json
 
 # Your bot token
 BOT_TOKEN = os.getenv('telegram_token')
+CHAT_ID = os.getenv('chat_id')
 
 class Telegram:
     def __init__(self, message: str):
@@ -17,17 +18,10 @@ class Telegram:
         URL = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
 
         payload = {
-            'text': self.message,
+            'text': f'dblinx | ' + self.message,
+            'chat_id': CHAT_ID,
         }
 
-        with open('./json/chat_IDs.json', 'r') as file:
-            chat_IDs = json.load(file)['chat_IDs']
+        response = requests.post(URL, json=payload)
 
-        for chat_ID in chat_IDs:
-            payload.update({
-                'chat_id': chat_ID,
-            })
-
-            response = requests.post(URL, json=payload)
-
-            print(response.json())
+        print(f'\nError report sent via telegram with status code {response.status_code}')

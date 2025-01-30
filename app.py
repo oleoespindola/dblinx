@@ -3,19 +3,19 @@ from src.upsert import EmployeesUpsert, SalesUpsert, MobilePlansUpsert, Insuranc
 
 def run():
     timeout = 6
-    download_time = 20
+    download_time = 120
 
     EmployeeDownload(timeout, download_time)
-    # EmployeesUpsert()
-    
+    EmployeesUpsert()
+
     SalesDownload(timeout, download_time)
-    # SalesUpsert()
+    SalesUpsert()
 
     MobilePlansDownload(timeout, download_time)
-    # MobilePlansUpsert()
+    MobilePlansUpsert()
 
     InsuranceDownload(timeout, download_time)
-    # InsuranceUpsert()
+    InsuranceUpsert()
 
 if __name__ == "__main__":
     run()

@@ -15,7 +15,7 @@ from .telegram import Telegram
 
 class JSONHandler:
     def __init__(self):
-        self.HSOT = os.getenv('db_host')
+        self.HOST = os.getenv('db_host')
         self.PORT = os.getenv('db_port')
         self.USER = os.getenv('db_user')
         self.PASSWORD = os.getenv('db_password')
@@ -23,7 +23,7 @@ class JSONHandler:
     def get_connection_string(self) -> str:
         return (
             f'mysql+mysqlconnector://{self.USER}:'
-            f'{self.PASSWORD}@{self.HSOT:PORT}'
+            f'{self.PASSWORD}@{self.HOST}:{self.PORT}'
         )
 
     def get_columns(self) -> dict:
@@ -36,7 +36,7 @@ class JSONHandler:
 class FILEHandler:
     def __init__(self):
         self.download_path = self._get_download_path()
-        self.file_path = None
+        self.file = None
 
     def _get_download_path(self) -> str:
         home = Path.home()
@@ -45,68 +45,72 @@ class FILEHandler:
     def read(self, filename: str = 'pivot.csv') -> pd.DataFrame:
         try:
             if filename == 'pivot.csv':
+                self.file = filename
                 return pd.read_csv(
                     os.path.join(self.download_path, filename),
                     delimiter=',', encoding='utf-8'
                 )
             else:
                 for file in os.listdir(self.download_path):
-                    if filename in file and 'csv' in file:
-                        return pd.read_csv(
-                                os.path.join(self.download_path, file),
-                                delimiter=',', encoding='utf-8'
-                            )
-                    elif filename in file and'xlsx' in file:
+                    self.file = file
+                    if filename in file and filename == 'sales':
                         return pd.read_excel(
-                            os.path.join(self.download_path, file), engine='openpyxl'
-                        )
-                    elif filename in file and'xls' in file:
+                                os.path.join(self.download_path, file),
+                                engine='openpyxl'
+                            )
+                    elif filename in file and filename == 'Servico':
                         return pd.read_html(
-                            os.path.join(self.download_path, file), flavor='html5lib'
+                            os.path.join(self.download_path, file), flavor='lxml'
                         )
         except FileNotFoundError:
-            raise Telegram(f'{filename} not found')
+            Telegram(f'\ndblinx | 🗃️ {filename} not found')
+            return pd.DataFrame()
 
     def delete_file(self):
         try:
-            os.remove(os.path.join(self.download_path, self.file_path))
+            os.remove(os.path.join(self.download_path, self.file))
         except FileNotFoundError:
-            Telegram(f'File nor found to delete')
+            Telegram(f'\ndblinx | 🗃️ {self.file} not found to delete')
 
 class EmployeesUpsert(JSONHandler, FILEHandler):
     def __init__(self):
+        print('Upsert: employees')
         JSONHandler.__init__(self)
         FILEHandler.__init__(self)
-        self.engine = create_engine(self.get_connection_string())
-        self.session = sessionmaker(bind=self.engine)()
         self.df = self.read()
-        self.columns = self.get_columns()['employees']
-        self._process_data()
-        self._upsert_data()
-        self.delete_csv()
+        if not self.df.empty:
+            self.engine = create_engine(self.get_connection_string())
+            self.session = sessionmaker(bind=self.engine)()
+            self.columns = self.get_columns()['employees']
+            self._process_data()
+            self._upsert_data()
 
     def _process_data(self) -> pd.DataFrame:
         try:
             self.df.rename(columns=self.columns, inplace=True)
             self.df.replace({'(blank)': None, pd.NaT: None, np.nan: None}, inplace=True)
-            self.df.reset_index(drop=True, inplace=True)
-                
-            self.df['admission_date'] = self.df['admission_date'].apply(lambda x: x.split(' ')[0] if x else None)
+            
+            self.df['admission_date'] = self.df['admission_date'].str.split(' ').str[0]
             self.df['admission_date'] = pd.to_datetime(self.df['admission_date'], format=f'%m/%d/%Y')
 
-            self.df['termination_date'] = self.df['termination_date'].apply(lambda x: x.split(' ')[0] if x else None)
+            self.df['termination_date'] = self.df['termination_date'].str.split(' ').str[0]
             self.df['termination_date'] = pd.to_datetime(self.df['termination_date'], format=f'%d/%m/%Y')
+
+            self.df['id'] = pd.to_numeric(self.df['id'].str.split(',').str[0]).astype(int)
+            self.df['store_id'] = pd.to_numeric(self.df['store_id'].str.split(',').str[0]).astype(int)
+            self.df['phone_number'] = pd.to_numeric(self.df['phone_number']).astype(float).round(0)
+            self.df['professional_whatsapp'] = pd.to_numeric(self.df['professional_whatsapp']).astype(float).round(0)
 
             numeric_cols = ['professional_whatsapp', 'phone_number']
             for col in numeric_cols:
                 self.df[col] = pd.to_numeric(self.df[col], errors='coerce')
 
             self.df['active'] = self.df['active'].map({'Sim': 1, 'Não': 0})
-
+            print(f'Process data: with success')
         except Exception:
-            Telegram('Porcess data with error for employees')
+            Telegram('\ndblinx | ⛔ Porcess data with error for employees')
         finally:
-            self.delete_csv()
+            self.delete_file()
 
     def _upsert_data(self):
         try:
@@ -122,20 +126,22 @@ class EmployeesUpsert(JSONHandler, FILEHandler):
             with self.session.connection() as connection:
                 connection.execute(text(query))
                 connection.execute(text('DROP TABLE dball.temp_employees'))
+            print(f'upsert with success')
         except Exception:
-            Telegram('Upsert data with error for employees')
+            Telegram('\ndblinx | ⛔ Upsert data with error for employees')
 
 class SalesUpsert(JSONHandler, FILEHandler):
     def __init__(self):
+        print(f'Upsert: sales')
         JSONHandler.__init__(self)
         FILEHandler.__init__(self)
-        self.engine = create_engine(self.get_connection_string())
-        self.session = sessionmaker(bind=self.engine)()
         self.df_sales = self.read()
-        self.columns = self.get_columns()['sales']
-        self._process_data()
-        self._upsert_data()
-        self.delete_csv()
+        if not self.df_sales.empty:
+            self.engine = create_engine(self.get_connection_string())
+            self.session = sessionmaker(bind=self.engine)()
+            self.columns = self.get_columns()['sales']
+            self._process_data()
+            self._upsert_data()
 
     def _process_data(self):
         try:
@@ -165,9 +171,12 @@ class SalesUpsert(JSONHandler, FILEHandler):
             ], inplace=True)
 
             self.df_customers.reset_index(drop=True, inplace=True)
+            print(f'process with success')
         except Exception:
-            self.handle_error('Porcess data with error for employees')
-            self.delete_csv()
+            Telegram('\ndblinx | ⛔ Porcess data with error for employees')
+            self.delete_file()
+        finally:
+            self.delete_file()
 
     def _upsert_data(self):
         try:
@@ -193,21 +202,22 @@ class SalesUpsert(JSONHandler, FILEHandler):
                 for query in queries:
                     connection.execute(text(query))
                 connection.execute(text('DROP TABLE IF EXISTS dball.temp_sales, dball.temp_customers'))
+            print(f'upsert with success')
         except Exception:
-            self.handle_error(f'Upsert data with error for sales and customers')
-            self.delete_csv()
+            Telegram(f'\ndblinx | ⛔ Upsert data with error for sales and customers')
 
 class MobilePlansUpsert(JSONHandler, FILEHandler):
     def __init__(self):
+        print(f'Upsert: mobile plans')
         JSONHandler.__init__(self)
         FILEHandler.__init__(self)
-        self.engine = create_engine(self.get_connection_string())
-        self.session = sessionmaker(bind=self.engine)()
         self.df = self.read(filename='sales')
-        self.columns = self.get_columns()['mobile_plans']
-        self._process_data()
-        self._upsert_data()
-        self.delete_csv()
+        if not self.df.empty:
+            self.engine = create_engine(self.get_connection_string())
+            self.session = sessionmaker(bind=self.engine)()
+            self.columns = self.get_columns()['mobile_plans']
+            self._process_data()
+            self._upsert_data()
 
     def _process_data(self):
         try:
@@ -223,9 +233,11 @@ class MobilePlansUpsert(JSONHandler, FILEHandler):
             self.df.reset_index(drop=True, inplace=True)
 
             self.df['registration_date'] = pd.to_datetime(self.df['registration_date'], format=f'%d/%m/%Y')
+            print(f'process with success')
         except Exception:
-            self.handle_error('Porcess data with error for mobile plans')
-            self.delete_csv()
+            Telegram('\ndblinx | ⛔ Porcess data with error for mobile plans')
+        finally:
+            self.delete_file()
 
     def _upsert_data(self):
         try:
@@ -241,21 +253,22 @@ class MobilePlansUpsert(JSONHandler, FILEHandler):
             with self.session.connection() as connection:
                 connection.execute(text(query))
                 connection.execute(text('DROP TABLE IF EXISTS dball.temp_mobile_plans'))
+            print(f'upsert with success')
         except Exception:
-            Telegram('Upsert data with error for mobile plans')
-            self.delete_csv()
+            Telegram('\ndblinx | ⛔ Upsert data with error for mobile plans')
         
 class InsuranceUpsert(JSONHandler, FILEHandler):
     def __init__(self):
+        print(f'Upsert: insurance')
         JSONHandler.__init__(self)
         FILEHandler.__init__(self)
-        self.engine = create_engine(self.get_connection_string())
-        self.session = sessionmaker(bind=self.engine)()
         self.df = self.read(filename='Servico')[0]
-        self.columns = self.get_columns()['insurance']
-        self._process_data()
-        self._upsert_data()
-        self.delete_csv()
+        if not self.df.empty:
+            self.engine = create_engine(self.get_connection_string())
+            self.session = sessionmaker(bind=self.engine)()
+            self.columns = self.get_columns()['insurance']
+            self._process_data()
+            self._upsert_data()
 
     def _process_data(self):
         try:
@@ -281,9 +294,11 @@ class InsuranceUpsert(JSONHandler, FILEHandler):
             self.df.reset_index(drop=True, inplace=True)
 
             self.df['registration_date'] = pd.to_datetime(self.df['registration_date'], format=f'%d/%m/%Y')
+            print(f'process with success')
         except Exception:
-            Telegram('Porcess data with error for insurance')
-            self.delete_csv()
+            Telegram('Process data with error for insurance')
+        finally:
+            self.delete_file()
 
     def _upsert_data(self):
         try:
@@ -299,6 +314,6 @@ class InsuranceUpsert(JSONHandler, FILEHandler):
             with self.session.connection() as connection:
                 connection.execute(text(query))
                 connection.execute(text('DROP TABLE IF EXISTS dball.temp_insurance_sales'))
+            print(f'upsert with success')
         except Exception:
-            Telegram('Upsert data with error')
-            self.delete_csv()
+            Telegram('\ndblinx | ⛔ Upsert data with error')
